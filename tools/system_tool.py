@@ -88,11 +88,19 @@ def open_app(app_name: str) -> dict:
 def verify_app_opened(result: dict) -> dict:
     """Verify that the application launch command completed successfully."""
     if not isinstance(result, dict) or not result.get("success"):
-        return {"verified": False, "reason": "App launch did not succeed"}
+        return {
+            "passed": False,
+            "method": "app_launch_check",
+            "evidence": {"reason": "App launch did not succeed"},
+        }
     return {
-        "verified": True,
-        "app_name": result.get("app_name"),
-        "message": result.get("message", "App launched successfully"),
+        "passed": True,
+        "method": "app_launch_check",
+        "evidence": {
+            "app_name": result.get("app_name"),
+            "message": result.get("message", "App launched successfully"),
+            "pid": result.get("pid"),
+        },
     }
 
 
@@ -126,9 +134,17 @@ def open_web(url: Optional[str] = None, query: Optional[str] = None) -> dict:
 def verify_web_opened(result: dict) -> dict:
     """Verify web opening action."""
     if not isinstance(result, dict) or not result.get("success"):
-        return {"verified": False, "reason": "Failed to open web"}
+        return {
+            "passed": False,
+            "method": "web_launch_check",
+            "evidence": {"reason": "Failed to open web"},
+        }
     return {
-        "verified": True,
-        "url": result.get("url"),
-        "message": result.get("message", "Web opened successfully"),
+        "passed": True,
+        "method": "web_launch_check",
+        "evidence": {
+            "url": result.get("url"),
+            "query": result.get("query"),
+            "message": result.get("message", "Web opened successfully"),
+        },
     }

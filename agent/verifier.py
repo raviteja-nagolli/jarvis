@@ -82,4 +82,10 @@ def _build_verify_kwargs(tool_name: str, output: Any, arguments: dict) -> dict:
             "expression": arguments.get("expression", ""),
             "expected_result": output.get("result") if isinstance(output, dict) else None,
         }
+    if tool_name == "open_app":
+        # verify_app_opened takes the result dict directly
+        return {"result": output if isinstance(output, dict) else {}}
+    if tool_name == "open_web":
+        # verify_web_opened takes the result dict directly
+        return {"result": output if isinstance(output, dict) else {}}
     return {}

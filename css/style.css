@@ -98,6 +98,10 @@ h1 em { color: var(--green); font-weight: 500; }
 .tool-button:hover { background: #f1f5f0; }
 .mic-glyph { display: grid; width: 19px; height: 19px; place-items: center; border: 1px solid #d9e2d9; border-radius: 50%; color: var(--green); font-size: 8px; }
 .mic-button.recording .mic-glyph { color: #fff; border-color: var(--coral); background: var(--coral); animation: recording 1s infinite; }
+.voice-convo-button { display: flex; align-items: center; gap: 6px; padding: 5px 9px; border: 1px solid #c8d9cb; border-radius: 4px; color: var(--green-dark); background: var(--green-pale); font-size: 11px; font-weight: 500; cursor: pointer; transition: all .15s; }
+.voice-convo-button:hover { background: #d7e8da; border-color: #a8c4ab; }
+.voice-convo-button.active { background: var(--coral); color: #fff; border-color: #ba4732; box-shadow: 0 0 0 3px #f7e4df; animation: recording 1.2s infinite; }
+.convo-glyph { font-size: 12px; }
 .discard-recording { display: grid; width: 23px; height: 23px; place-items: center; padding: 0; border: 0; border-radius: 50%; color: #9f5748; background: #faeeea; font-size: 18px; line-height: 1; cursor: pointer; }
 .discard-recording:hover { background: #f5ddd6; }
 @keyframes recording { 50% { box-shadow: 0 0 0 5px #f5e2dd; } }

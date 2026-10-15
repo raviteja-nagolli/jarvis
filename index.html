@@ -63,6 +63,7 @@
               <div class="request-tools">
                 <div class="request-left-tools">
                   <button class="tool-button mic-button" id="mic-button" type="button" aria-label="Record voice request" title="Record a voice request"><span class="mic-glyph">●</span><span id="mic-label">Speak</span></button>
+                  <button class="tool-button voice-convo-button" id="voice-convo-button" type="button" aria-label="Start English voice conversation" title="Interactive English voice conversation"><span class="convo-glyph">🎙</span><span id="voice-convo-label">Voice Convo</span></button>
                   <button class="discard-recording" id="discard-recording" type="button" aria-label="Discard recording" title="Discard recording" hidden>×</button>
                   <span class="tool-divider"></span>
                   <label class="language-control" for="input-language"><span class="language-label">INPUT</span><select id="input-language" aria-label="Input language"></select></label>
@@ -105,6 +106,8 @@
               <div class="language-hint" id="language-hint">Voice availability is confirmed by the configured backend.</div>
               <div class="setting-separator"></div>
               <label class="toggle-row" for="auto-speak"><span class="toggle-copy"><strong>Spoken responses</strong><small>Read the final report aloud</small></span><span class="switch"><input type="checkbox" id="auto-speak"><span class="switch-track"></span></span></label>
+              <div class="setting-separator"></div>
+              <label class="toggle-row" for="auto-approve-voice"><span class="toggle-copy"><strong>Voice conversation auto-run</strong><small>Auto-execute voice commands</small></span><span class="switch"><input type="checkbox" id="auto-approve-voice"><span class="switch-track"></span></span></label>
             </section>
 
             <section class="how-panel">
