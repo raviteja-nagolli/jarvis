@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f5f0">
+  <title>JARVIS | Personal AI Execution Agent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="#agent" aria-label="JARVIS home">
+        <span class="brand-mark" aria-hidden="true">J</span>
+        <span class="brand-copy"><strong>JARVIS</strong><small>PERSONAL EXECUTION AGENT</small></span>
+      </a>
+
+      <div class="workspace-label">WORKSPACE</div>
+      <nav class="primary-nav" aria-label="Main navigation">
+        <button class="nav-link active" type="button" data-view="agent"><span class="nav-icon">↗</span> Agent <span class="nav-shortcut">01</span></button>
+        <button class="nav-link" type="button" data-view="knowledge"><span class="nav-icon">▤</span> Knowledge <span class="nav-count" id="knowledge-count">0</span></button>
+      </nav>
+
+      <div class="sidebar-rule"></div>
+      <div class="workspace-label">CAPABILITIES</div>
+      <div class="capability-list">
+        <div class="capability-row"><span class="cap-dot" id="api-dot"></span><span>Execution backend</span><span class="cap-state" id="api-state">Checking</span></div>
+        <div class="capability-row"><span class="cap-dot muted" id="voice-dot"></span><span>Sarvam voice</span><span class="cap-state" id="voice-state">Checking</span></div>
+        <div class="capability-row"><span class="cap-dot muted" id="rag-dot"></span><span>File Search</span><span class="cap-state" id="rag-state">Checking</span></div>
+      </div>
+
+      <div class="sidebar-bottom">
+        <div class="privacy-note"><span aria-hidden="true">◈</span><p>Actions wait for your approval.<br>JARVIS never executes a plan silently.</p></div>
+        <div class="user-chip"><span class="user-avatar">J</span><span><strong>Local workspace</strong><small>Personal assistant</small></span><span class="user-menu" aria-hidden="true">···</span></div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div class="breadcrumb"><span>Workspace</span><span class="breadcrumb-divider">/</span><strong id="breadcrumb-current">Agent</strong></div>
+        <div class="topbar-right"><span class="date-label" id="today-label"></span><span class="topbar-status"><span class="status-pulse"></span> <span id="topbar-status-text">Connecting</span></span></div>
+      </header>
+
+      <section class="view active" id="agent-view" aria-labelledby="agent-title">
+        <div class="page-heading">
+          <div>
+            <div class="eyebrow"><span class="eyebrow-line"></span> YOUR PERSONAL AI EXECUTION AGENT</div>
+            <h1 id="agent-title">What should we <em>get done?</em></h1>
+            <p class="page-intro">Tell JARVIS what you need. Review the plan before anything happens.</p>
+          </div>
+          <div class="heading-orbit" aria-hidden="true"><span class="orbit-core">J</span><span class="orbit-ring ring-one"></span><span class="orbit-ring ring-two"></span><span class="orbit-dot"></span></div>
+        </div>
+
+        <div class="agent-layout">
+          <div class="work-column">
+            <section class="request-panel" aria-label="Create a request">
+              <div class="panel-topline"><span class="step-kicker"><span>01</span> NEW REQUEST</span><span class="secure-label"><span>●</span> Private session</span></div>
+              <label class="sr-only" for="request-input">Describe what you want JARVIS to do</label>
+              <textarea id="request-input" maxlength="4000" placeholder="Try “Add a reminder to call Mum tomorrow at 10” or ask a question about your knowledge base…"></textarea>
+              <div class="request-tools">
+                <div class="request-left-tools">
+                  <button class="tool-button mic-button" id="mic-button" type="button" aria-label="Record voice request" title="Record a voice request"><span class="mic-glyph">●</span><span id="mic-label">Speak</span></button>
+                  <button class="discard-recording" id="discard-recording" type="button" aria-label="Discard recording" title="Discard recording" hidden>×</button>
+                  <span class="tool-divider"></span>
+                  <label class="language-control" for="input-language"><span class="language-label">INPUT</span><select id="input-language" aria-label="Input language"></select></label>
+                </div>
+                <div class="request-right-tools"><span class="char-count" id="char-count">0 / 4000</span><button class="send-button" id="plan-button" type="button"><span>Build a plan</span><span class="send-arrow" aria-hidden="true">↗</span></button></div>
+              </div>
+              <div class="recording-status" id="recording-status" aria-live="polite"></div>
+              <div class="request-error" id="request-error" role="alert" hidden></div>
+            </section>
+
+            <section class="plan-section" id="plan-section" hidden aria-live="polite">
+              <div class="section-heading plan-heading">
+                <div><span class="step-kicker"><span>02</span> REVIEW BEFORE EXECUTION</span><h2 id="plan-summary">Proposed plan</h2></div>
+                <span class="plan-status" id="plan-status">AWAITING APPROVAL</span>
+              </div>
+              <div class="plan-meta" id="plan-meta"></div>
+              <div class="plan-steps" id="plan-steps"></div>
+              <div class="plan-actions" id="plan-actions">
+                <button class="button-secondary" id="replan-button" type="button">Edit request &amp; replan</button>
+                <button class="button-secondary cancel-button" id="cancel-button" type="button">Cancel</button>
+                <button class="button-primary" id="approve-button" type="button"><span>Approve and execute</span><span aria-hidden="true">→</span></button>
+              </div>
+              <div class="execution-summary" id="execution-summary" hidden></div>
+            </section>
+
+            <section class="response-panel" id="response-panel" hidden aria-live="polite">
+              <div class="response-heading"><span class="response-mark">✳</span><div><span class="step-kicker">JARVIS REPORT</span><h2 id="response-title">Execution report</h2></div></div>
+              <div class="response-copy" id="response-copy"></div>
+              <div class="response-sources" id="response-sources"></div>
+              <div class="voice-output" id="voice-output" hidden><audio id="response-audio" controls></audio><span id="voice-error" class="inline-error"></span></div>
+            </section>
+
+            <div class="quiet-note"><span aria-hidden="true">↳</span> Your plan is reviewed first. You stay in control of every action.</div>
+          </div>
+
+          <aside class="settings-column" aria-label="Request settings">
+            <section class="settings-panel">
+              <div class="settings-heading"><span class="settings-icon">文</span><div><h2>Language</h2><p>Keep input and response separate.</p></div></div>
+              <label class="setting-field" for="response-language"><span>RESPONSE LANGUAGE</span><select id="response-language"></select></label>
+              <div class="language-hint" id="language-hint">Voice availability is confirmed by the configured backend.</div>
+              <div class="setting-separator"></div>
+              <label class="toggle-row" for="auto-speak"><span class="toggle-copy"><strong>Spoken responses</strong><small>Read the final report aloud</small></span><span class="switch"><input type="checkbox" id="auto-speak"><span class="switch-track"></span></span></label>
+            </section>
+
+            <section class="how-panel">
+              <div class="how-title"><span class="how-number">FLOW</span><span class="how-rule"></span></div>
+              <div class="flow-list">
+                <div class="flow-item"><span class="flow-index">01</span><span class="flow-copy"><strong>Understand</strong><small>Request and context</small></span><span class="flow-state active">●</span></div>
+                <div class="flow-item"><span class="flow-index">02</span><span class="flow-copy"><strong>Plan</strong><small>Steps and permissions</small></span><span class="flow-state">○</span></div>
+                <div class="flow-item"><span class="flow-index">03</span><span class="flow-copy"><strong>Approve</strong><small>Your explicit consent</small></span><span class="flow-state">○</span></div>
+                <div class="flow-item"><span class="flow-index">04</span><span class="flow-copy"><strong>Verify</strong><small>Evidence, not assumptions</small></span><span class="flow-state">○</span></div>
+              </div>
+              <div class="flow-footnote">No operation is reported successful until it has been verified.</div>
+            </section>
+          </aside>
+        </div>
+      </section>
+
+      <section class="view" id="knowledge-view" aria-labelledby="knowledge-title">
+        <div class="page-heading knowledge-page-heading">
+          <div><div class="eyebrow"><span class="eyebrow-line"></span> YOUR PRIVATE REFERENCE LIBRARY</div><h1 id="knowledge-title">Knowledge, <em>at hand.</em></h1><p class="page-intro">Add approved documents for grounded answers with traceable sources.</p></div>
+        </div>
+        <div class="knowledge-layout">
+          <section class="upload-panel">
+            <div class="upload-top"><span class="step-kicker"><span>01</span> ADD KNOWLEDGE</span><span class="upload-format">PDF · TXT · MD</span></div>
+            <label class="dropzone" id="dropzone" for="document-input">
+              <span class="upload-icon" aria-hidden="true">↑</span><strong>Choose a document</strong><span>PDF, TXT or Markdown · Max 20 MB</span>
+              <input type="file" id="document-input" accept=".pdf,.txt,.md,.markdown,application/pdf,text/plain,text/markdown">
+            </label>
+            <div class="upload-feedback" id="upload-feedback" role="status"></div>
+            <div class="upload-note"><span>◇</span> Documents are only available to retrieval after indexing completes.</div>
+          </section>
+          <section class="documents-panel">
+            <div class="documents-heading"><div><span class="step-kicker"><span>02</span> LIBRARY</span><h2>Documents <span id="document-total">0</span></h2></div><button class="icon-button" type="button" id="refresh-documents" aria-label="Refresh document status" title="Refresh document status">↻</button></div>
+            <div class="document-list" id="document-list"><div class="empty-documents"><span class="empty-mark">▤</span><strong>Your library is clear.</strong><span>Uploaded knowledge will appear here with its indexing status.</span></div></div>
+          </section>
+        </div>
+      </section>
+
+      <footer class="app-footer"><span>JARVIS <span class="footer-separator">/</span> PRIVATE BY DESIGN</span><span>UNDERSTAND <i>·</i> PLAN <i>·</i> VERIFY</span></footer>
+    </main>
+  </div>
+  <script src="js/languages.js"></script>
+  <script src="js/voice.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
