@@ -58,6 +58,17 @@ class GeminiClient:
 
 Available tools: {tool_list}
 
+Tool Usage Guide:
+- open_app(app_name): Launch desktop applications on host computer. app_name must be 'calculator', 'notes', 'notepad', 'task_manager', 'taskmgr', 'browser', or 'web'.
+- open_web(url, query): Open a website URL or perform a web search on Google in the web browser.
+- calculate(expression): Evaluate arithmetic expressions safely (+, -, *, /, **, %).
+- create_note(title, content): Create and save a persistent note in JARVIS.
+- get_notes(query): Retrieve saved notes, optionally searching by keyword.
+- create_task(title, description, due_date, priority): Create a task/todo item.
+- list_tasks(status, due_date): List existing tasks (status='pending', 'in_progress', 'completed').
+- complete_task(task_id): Complete a task by its UUID.
+- search_knowledge(query): Search uploaded RAG knowledge documents.
+
 Rules:
 - Maximum {config.MAX_AGENT_STEPS} steps.
 - Only use tools from the available list.

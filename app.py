@@ -548,6 +548,73 @@ def api_complete_task(task_id: str):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# Calculator
+# ══════════════════════════════════════════════════════════════════════════════
+
+@app.post("/api/calculate")
+def api_calculate():
+    try:
+        body = _parse_json_body()
+    except ValueError as exc:
+        return err(str(exc))
+
+    expr = (body.get("expression") or "").strip()
+    if not expr:
+        return err("'expression' is required")
+
+    from tools.calculator_tool import calculate, verify_calculation
+    try:
+        res = calculate(expr)
+        ver = verify_calculation(res)
+        return ok({"expression": expr, "result": res, "verification": ver})
+    except Exception as exc:
+        return err(str(exc), 400)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# System App & Web Launcher
+# ══════════════════════════════════════════════════════════════════════════════
+
+@app.post("/api/system/open-app")
+def api_open_app():
+    try:
+        body = _parse_json_body()
+    except ValueError as exc:
+        return err(str(exc))
+
+    app_name = (body.get("app") or body.get("app_name") or "").strip()
+    if not app_name:
+        return err("'app' or 'app_name' field is required")
+
+    from tools.system_tool import open_app, verify_app_opened
+    try:
+        res = open_app(app_name)
+        ver = verify_app_opened(res)
+        return ok({"app": app_name, "result": res, "verification": ver})
+    except Exception as exc:
+        return err(str(exc), 400)
+
+
+@app.post("/api/system/open-web")
+def api_open_web():
+    try:
+        body = _parse_json_body()
+    except ValueError as exc:
+        return err(str(exc))
+
+    url = body.get("url")
+    query = body.get("query")
+
+    from tools.system_tool import open_web, verify_web_opened
+    try:
+        res = open_web(url=url, query=query)
+        ver = verify_web_opened(res)
+        return ok({"result": res, "verification": ver})
+    except Exception as exc:
+        return err(str(exc), 400)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # Knowledge / RAG
 # ══════════════════════════════════════════════════════════════════════════════
 

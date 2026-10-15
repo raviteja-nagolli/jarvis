@@ -54,6 +54,7 @@ from tools.tasks_tool import (
 )
 from tools.calculator_tool import calculate, verify_calculation
 from tools.search_tool import search_knowledge
+from tools.system_tool import open_app, verify_app_opened, open_web, verify_web_opened
 
 
 # ── Registry ──────────────────────────────────────────────────────────────────
@@ -212,6 +213,59 @@ _reg(ToolDefinition(
     permission="compute",
     timeout_seconds=5,
     max_retries=0,
+    idempotent=True,
+))
+
+_reg(ToolDefinition(
+    name="open_app",
+    description=(
+        "Launch a local desktop application on the host machine. "
+        "Supported apps: 'calculator' (calc), 'notes' / 'notepad', "
+        "'task_manager' / 'taskmgr' (Task Manager), and 'browser' / 'web'."
+    ),
+    input_schema={
+        "type": "object",
+        "properties": {
+            "app_name": {
+                "type": "string",
+                "description": "Name of the application to open: 'calculator', 'notes', 'notepad', 'task_manager', 'taskmgr', 'browser', 'web'",
+            },
+        },
+        "required": ["app_name"],
+    },
+    fn=open_app,
+    verify_fn=verify_app_opened,
+    permission="system",
+    timeout_seconds=10,
+    max_retries=1,
+    idempotent=True,
+))
+
+_reg(ToolDefinition(
+    name="open_web",
+    description=(
+        "Open a webpage or perform a web search in the default web browser. "
+        "Use this when the user asks to browse the web or search online."
+    ),
+    input_schema={
+        "type": "object",
+        "properties": {
+            "url": {
+                "type": "string",
+                "description": "Optional direct URL to navigate to (e.g. 'https://github.com')",
+            },
+            "query": {
+                "type": "string",
+                "description": "Optional search query to look up on Google (e.g. 'latest tech news')",
+            },
+        },
+        "required": [],
+    },
+    fn=open_web,
+    verify_fn=verify_web_opened,
+    permission="system",
+    timeout_seconds=10,
+    max_retries=1,
     idempotent=True,
 ))
 
