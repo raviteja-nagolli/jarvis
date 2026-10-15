@@ -46,6 +46,16 @@ def generate_plan(
         raise PlannerError(str(exc)) from exc
 
     raw_plan["run_id"] = run_id
+
+    # Build map of step_id -> step_number
+    id_to_num = {}
+    for step in raw_plan.get("steps", []):
+        sid = step.get("step_id")
+        snum = step.get("step_number")
+        if sid is not None and snum is not None:
+            id_to_num[str(sid)] = int(snum)
+
+    # Normalize dependencies and validate tools
     for step in raw_plan.get("steps", []):
         tool = step.get("tool_name", "")
         if tool not in known_tools:
@@ -53,6 +63,19 @@ def generate_plan(
                 f"Plan contains unknown tool '{tool}'. "
                 f"Allowed tools: {sorted(known_tools)}"
             )
+        deps = step.get("dependencies", [])
+        if isinstance(deps, (int, str)):
+            deps = [deps]
+        norm = []
+        for d in deps or []:
+            if isinstance(d, int):
+                norm.append(d)
+            elif isinstance(d, str):
+                if d.isdigit():
+                    norm.append(int(d))
+                elif d in id_to_num:
+                    norm.append(id_to_num[d])
+        step["dependencies"] = norm
 
     try:
         plan = ExecutionPlan(**raw_plan)

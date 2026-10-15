@@ -51,6 +51,38 @@ class ExecutionPlan(BaseModel):
     response_language: str
     steps: List[ExecutionStep]
 
+    @field_validator("steps", mode="before")
+    @classmethod
+    def normalize_step_dependencies(cls, steps):
+        if not isinstance(steps, list):
+            return steps
+        id_to_num = {}
+        for s in steps:
+            if isinstance(s, dict):
+                sid = s.get("step_id")
+                snum = s.get("step_number")
+                if sid is not None and snum is not None:
+                    try:
+                        id_to_num[str(sid)] = int(snum)
+                    except (ValueError, TypeError):
+                        pass
+        for s in steps:
+            if isinstance(s, dict) and "dependencies" in s:
+                deps = s["dependencies"]
+                if isinstance(deps, (int, str)):
+                    deps = [deps]
+                norm = []
+                for d in deps or []:
+                    if isinstance(d, int):
+                        norm.append(d)
+                    elif isinstance(d, str):
+                        if d.isdigit():
+                            norm.append(int(d))
+                        elif d in id_to_num:
+                            norm.append(id_to_num[d])
+                s["dependencies"] = norm
+        return steps
+
     @field_validator("steps")
     @classmethod
     def validate_steps(cls, steps: List[ExecutionStep]) -> List[ExecutionStep]:

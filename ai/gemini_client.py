@@ -72,7 +72,7 @@ Tool Usage Guide:
 Rules:
 - Maximum {config.MAX_AGENT_STEPS} steps.
 - Only use tools from the available list.
-- dependencies is a list of step_numbers this step must wait for.
+- dependencies is a list of integer step_numbers this step must wait for (e.g. [1], never string step_ids).
 - No circular dependencies.
 - Return ONLY valid JSON. No markdown fences, no explanation.
 - All user-facing text (title, action_description, summary, expected_result) in the response language.

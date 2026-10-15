@@ -556,12 +556,12 @@
     if (elements["auto-speak"]) elements["auto-speak"].checked = true;
     if (elements["input-language"]) elements["input-language"].value = "en-IN";
     if (elements["response-language"]) elements["response-language"].value = "en-IN";
+    JarvisVoice.stopSpeaking();
 
-    // Play quick audio greeting / prompt
-    JarvisVoice.speak("Listening. What can I do for you?");
-    setTimeout(() => {
-      startEnglishRecognition(true);
-    }, 1200);
+    if (elements["recording-status"]) {
+      elements["recording-status"].textContent = "🎙️ Listening... Speak your request now in English";
+    }
+    startEnglishRecognition(true);
   }
 
   function stopVoiceConversation() {
