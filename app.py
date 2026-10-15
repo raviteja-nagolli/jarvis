@@ -67,7 +67,11 @@ def _parse_json_body() -> dict:
 
 @app.get("/")
 def index():
-    # If templates/index.html or static/index.html exists, serve it
+    # Priority: root index.html, templates/index.html, static/index.html
+    root_index = Path("index.html")
+    if root_index.is_file():
+        return send_file(str(root_index))
+
     tmpl_index = Path(app.template_folder) / "index.html"
     if tmpl_index.is_file():
         return render_template("index.html")
@@ -82,6 +86,7 @@ def index():
         "version": "1.0.0",
         "endpoints": {
             "health": "/api/health",
+            "config": "/api/config",
             "languages": "/api/languages",
             "runs": "/api/runs",
             "notes": "/api/notes",
@@ -90,14 +95,36 @@ def index():
             "knowledge_status": "/api/knowledge/status",
             "knowledge_query": "/api/knowledge/query",
             "transcribe": "/api/voice/transcribe",
-            "speak": "/api/voice/speak",
+            "synthesize": "/api/voice/synthesize",
         },
-        "docs": "Backend API is ready. Attach frontend templates/static files to serve UI directly, or connect via localhost:5000 with CORS."
+        "docs": "Backend API is ready. Frontend is integrated."
     })
 
 
+@app.get("/css/<path:filename>")
+def serve_css(filename):
+    css_dir = Path("css")
+    if css_dir.is_dir() and (css_dir / filename).is_file():
+        return send_from_directory("css", filename)
+    static_css = Path(app.static_folder) / "css"
+    if static_css.is_dir() and (static_css / filename).is_file():
+        return send_from_directory(static_css, filename)
+    return err("CSS file not found", 404)
+
+
+@app.get("/js/<path:filename>")
+def serve_js(filename):
+    js_dir = Path("js")
+    if js_dir.is_dir() and (js_dir / filename).is_file():
+        return send_from_directory("js", filename)
+    static_js = Path(app.static_folder) / "js"
+    if static_js.is_dir() and (static_js / filename).is_file():
+        return send_from_directory(static_js, filename)
+    return err("JS file not found", 404)
+
+
 # ══════════════════════════════════════════════════════════════════════════════
-# Health
+# Health & Config
 # ══════════════════════════════════════════════════════════════════════════════
 
 @app.get("/api/health")
@@ -106,6 +133,41 @@ def health():
         "status": "ok",
         "integrations": config.integration_status(),
         "version": "1.0.0",
+    })
+
+
+@app.get("/api/config")
+def api_config():
+    from ai.language_manager import all_languages
+    langs = all_languages()
+    lang_list = [
+        {
+            "code": l["locale"],
+            "name": l["display_name"],
+            "locale": l["locale"],
+            "speech_to_text": l["stt_available"] and bool(config.SARVAM_API_KEY),
+            "text_to_speech": l["tts_available"] and bool(config.SARVAM_API_KEY),
+        }
+        for l in langs
+    ]
+    return ok({
+        "api": {
+            "status": "online",
+            "version": "1.0.0",
+        },
+        "voice": {
+            "speech_to_text": bool(config.SARVAM_API_KEY),
+            "text_to_speech": bool(config.SARVAM_API_KEY),
+            "status": "Ready" if config.SARVAM_API_KEY else "Not configured",
+            "stt_model": config.SARVAM_STT_MODEL,
+            "tts_model": config.SARVAM_TTS_MODEL,
+        },
+        "rag": {
+            "available": bool(config.GEMINI_API_KEY),
+            "status": "Ready" if config.GEMINI_API_KEY else "Not configured",
+        },
+        "languages": lang_list,
+        "default_language": config.DEFAULT_LANGUAGE,
     })
 
 
@@ -120,6 +182,7 @@ def get_languages():
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════════════════════
 # Voice — Transcription
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -132,7 +195,11 @@ def transcribe():
         return err("Multipart field 'audio' is required")
 
     audio_file = request.files["audio"]
-    language_code = request.form.get("language_code", "unknown")
+    language_code = (
+        request.form.get("language_code")
+        or request.form.get("input_language")
+        or "unknown"
+    )
 
     audio_bytes = audio_file.read()
     if len(audio_bytes) == 0:
@@ -154,6 +221,7 @@ def transcribe():
     if result["success"]:
         return ok({
             "transcript": result["transcript"],
+            "language": result["language_code"],
             "language_code": result["language_code"],
             "request_id": result.get("request_id"),
         })
@@ -161,10 +229,11 @@ def transcribe():
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Voice — Text-to-speech
+# Voice — Text-to-speech / Synthesize
 # ══════════════════════════════════════════════════════════════════════════════
 
 @app.post("/api/voice/speak")
+@app.post("/api/voice/synthesize")
 def speak():
     if not config.SARVAM_API_KEY:
         return err("Sarvam API key not configured", 503)
@@ -178,7 +247,7 @@ def speak():
     if not text:
         return err("'text' field is required")
 
-    language_code = body.get("language_code", config.DEFAULT_LANGUAGE)
+    language_code = body.get("language_code") or body.get("language") or config.DEFAULT_LANGUAGE
     speaker = body.get("speaker")
 
     from ai.sarvam_voice import synthesize_speech
@@ -201,6 +270,7 @@ def speak():
 # ══════════════════════════════════════════════════════════════════════════════
 
 @app.post("/api/runs")
+@app.post("/api/runs/plan")
 def create_run():
     try:
         body = _parse_json_body()
@@ -263,16 +333,28 @@ def create_run():
             "expected_result": step.expected_result,
         })
 
-    return ok({"run_id": run_id, "plan": plan_dict}, 201)
+    run_response = {
+        **plan_dict,
+        "run_id": run_id,
+        "id": run_id,
+        "status": "awaiting_approval",
+        "summary": plan.summary,
+        "title": plan.summary,
+        "input_language": input_language,
+        "response_language": response_language,
+        "steps": plan_dict.get("steps", []),
+    }
+    return ok({"run_id": run_id, "id": run_id, "plan": run_response, "run": run_response}, 201)
 
 
 @app.post("/api/runs/<run_id>/execute")
+@app.post("/api/runs/<run_id>/approve")
 def execute_run(run_id: str):
-    from database.db import get_run, get_steps
+    from database.db import get_run
     run = get_run(run_id)
     if not run:
         return err("Run not found", 404)
-    if run["status"] not in ("planned",):
+    if run["status"] not in ("planned", "awaiting_approval", "pending"):
         return err(f"Run is not in 'planned' state (current: {run['status']})", 409)
 
     plan_json = run.get("plan_json")
@@ -291,7 +373,14 @@ def execute_run(run_id: str):
     from agent.orchestrator import submit_run
     submit_run(run_id, plan)
 
-    return ok({"run_id": run_id, "status": "running"})
+    run_dict = dict(run)
+    run_dict["status"] = "running"
+    run_dict["run_id"] = run_id
+    run_dict["id"] = run_id
+    if plan_data.get("steps"):
+        run_dict["steps"] = plan_data.get("steps")
+
+    return ok({"run_id": run_id, "status": "running", "run": run_dict})
 
 
 @app.get("/api/runs/<run_id>")
@@ -312,14 +401,20 @@ def get_run_detail(run_id: str):
                 pass
 
     steps = get_steps(run_id)
+    formatted_steps = []
     for step in steps:
+        step_dict = dict(step)
         for field in ("arguments_json", "dependencies_json", "output_json", "verification_json"):
-            val = step.get(field)
+            val = step_dict.get(field)
             if val and isinstance(val, str):
                 try:
-                    step[field] = json.loads(val)
+                    step_dict[field] = json.loads(val)
                 except Exception:
                     pass
+        step_dict["sequence"] = step_dict.get("step_number")
+        step_dict["description"] = step_dict.get("expected_result")
+        step_dict["result"] = step_dict.get("output_json")
+        formatted_steps.append(step_dict)
 
     events = get_run_events(run_id)
     for ev in events:
@@ -330,7 +425,17 @@ def get_run_detail(run_id: str):
             except Exception:
                 pass
 
-    return ok({"run": run_dict, "steps": steps, "events": events})
+    final_rep = run_dict.get("final_report_json")
+    if isinstance(final_rep, dict):
+        run_dict["summary"] = final_rep.get("summary") or run_dict.get("summary")
+        run_dict["final_response"] = final_rep.get("summary")
+        run_dict["response"] = final_rep.get("summary")
+
+    run_dict["steps"] = formatted_steps
+    run_dict["id"] = run_id
+    run_dict["run_id"] = run_id
+
+    return ok({"run": run_dict, "steps": formatted_steps, "events": events})
 
 
 @app.get("/api/runs")
@@ -357,7 +462,11 @@ def cancel_run(run_id: str):
 
     from agent.orchestrator import cancel_run as orch_cancel
     flagged = orch_cancel(run_id)
-    return ok({"run_id": run_id, "cancel_requested": flagged})
+    run_dict = dict(run)
+    run_dict["status"] = "cancelled"
+    run_dict["id"] = run_id
+    run_dict["run_id"] = run_id
+    return ok({"run_id": run_id, "cancel_requested": flagged, "run": run_dict})
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -451,6 +560,7 @@ _ALLOWED_MIME_TYPES = {
 
 
 @app.post("/api/knowledge/upload")
+@app.post("/api/knowledge/documents")
 def upload_knowledge():
     if not config.GEMINI_API_KEY:
         return err("Gemini API key not configured — RAG unavailable", 503)
@@ -462,11 +572,15 @@ def upload_knowledge():
     mime = f.content_type or "application/octet-stream"
     clean_mime = mime.split(";")[0].strip()
 
+    ext = Path(f.filename or "").suffix.lower()
     if clean_mime not in _ALLOWED_MIME_TYPES:
-        return err(
-            f"Unsupported file type '{clean_mime}'. "
-            f"Allowed: {list(_ALLOWED_MIME_TYPES)}"
-        )
+        if ext in (".pdf", ".txt", ".md", ".markdown"):
+            clean_mime = "application/pdf" if ext == ".pdf" else "text/markdown" if ext in (".md", ".markdown") else "text/plain"
+        else:
+            return err(
+                f"Unsupported file type '{clean_mime}'. "
+                f"Allowed: {list(_ALLOWED_MIME_TYPES)}"
+            )
 
     file_bytes = f.read()
     if len(file_bytes) == 0:
@@ -502,14 +616,21 @@ def upload_knowledge():
                              error=store_result.get("error", "Store indexing failed"))
         return err(f"Indexing failed: {store_result.get('error')}", 502)
 
-    return ok({"doc_id": doc_id, "display_name": display_name, "status": "ready"}, 201)
+    doc_info = {"id": doc_id, "doc_id": doc_id, "title": display_name, "display_name": display_name, "status": "ready"}
+    return ok({"doc_id": doc_id, "display_name": display_name, "title": display_name, "status": "ready", "document": doc_info}, 201)
 
 
 @app.get("/api/knowledge/documents")
 def list_knowledge_docs():
     from database.db import get_knowledge_docs
     docs = get_knowledge_docs()
-    return ok({"documents": docs})
+    formatted = []
+    for d in docs:
+        d_dict = dict(d)
+        d_dict["title"] = d_dict.get("display_name") or d_dict.get("filename")
+        d_dict["id"] = d_dict.get("doc_id")
+        formatted.append(d_dict)
+    return ok({"documents": formatted})
 
 
 @app.get("/api/knowledge/status")

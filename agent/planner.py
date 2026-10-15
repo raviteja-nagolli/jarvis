@@ -45,7 +45,7 @@ def generate_plan(
     except Exception as exc:
         raise PlannerError(str(exc)) from exc
 
-    # Validate tool names before Pydantic validation
+    raw_plan["run_id"] = run_id
     for step in raw_plan.get("steps", []):
         tool = step.get("tool_name", "")
         if tool not in known_tools:
