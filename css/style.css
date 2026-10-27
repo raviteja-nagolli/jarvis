@@ -21,6 +21,9 @@ body { margin: 0; color: var(--ink); font-family: var(--sans); font-size: 14px; 
 button, textarea, select { font: inherit; }
 button { color: inherit; }
 button:focus-visible, textarea:focus-visible, select:focus-visible, input:focus-visible + .switch-track { outline: 3px solid #8db79a; outline-offset: 2px; }
+.chatbot-button { position: fixed; right: 24px; bottom: 24px; z-index: 10; display: grid; width: 48px; height: 48px; place-items: center; padding: 0; border: 0; border-radius: 50%; color: #fff; background: var(--green); box-shadow: 0 6px 16px rgba(48, 73, 54, .2); cursor: pointer; transition: background .15s, transform .15s, box-shadow .15s; }
+.chatbot-button svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.7; }
+.chatbot-button:hover { background: var(--green-dark); box-shadow: 0 8px 20px rgba(48, 73, 54, .26); transform: translateY(-2px); }
 .app-shell { display: grid; grid-template-columns: 246px minmax(0, 1fr); min-height: 100vh; }
 .sidebar { position: sticky; top: 0; display: flex; flex-direction: column; height: 100vh; padding: 27px 17px 17px; background: #fff; border-right: 1px solid var(--line); z-index: 5; }
 .brand { display: flex; align-items: center; gap: 11px; padding: 0 7px 35px; color: inherit; text-decoration: none; }
